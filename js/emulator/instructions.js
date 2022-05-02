@@ -80,6 +80,14 @@ export var Opcode;
     Opcode[Opcode["__ASSERT0"] = 69] = "__ASSERT0";
     Opcode[Opcode["__ASSERT_EQ"] = 70] = "__ASSERT_EQ";
     Opcode[Opcode["__ASSERT_NEQ"] = 71] = "__ASSERT_NEQ";
+    //----- Custom CHUNUGUS Instructions
+    Opcode[Opcode["UMLT"] = 72] = "UMLT";
+    Opcode[Opcode["ADDV"] = 73] = "ADDV";
+    Opcode[Opcode["SUBV"] = 74] = "SUBV";
+    Opcode[Opcode["SQRT"] = 75] = "SQRT";
+    Opcode[Opcode["CLZ"] = 76] = "CLZ";
+    Opcode[Opcode["CTZ"] = 77] = "CTZ";
+    Opcode[Opcode["BTC"] = 78] = "BTC";
 })(Opcode || (Opcode = {}));
 export var Register;
 (function (Register) {
@@ -374,12 +382,40 @@ export const Opcodes_operants = {
             fail_assert(s); }],
     [Opcode.__ASSERT_NEQ]: [[GET, GET], (s) => { if (s.a === s.b)
             fail_assert(s); }],
+    //----- Custom CHUNGUS Instructions
+    [Opcode.UMLT]: [[SET, GET, GET], (s) => { s.a = (s.b * s.c) >> s.bits; }], //note: doesn't work on 32 bits
+    [Opcode.ADDV]: [[SET, GET, GET], (s) => { s.a = (((s.b & 0xf0) + (s.c & 0xf0)) & 0xf0) | (((s.b & 0x0f) + (s.c & 0x0f)) & 0x0f); }], //NOTE: only works on 8 bits
+    [Opcode.SUBV]: [[SET, GET, GET], (s) => { s.a = (((s.b & 0xf0) - (s.c & 0xf0)) & 0xf0) | (((s.b & 0x0f) - (s.c & 0x0f)) & 0x0f); }], //note: only works on 8 bits
+    [Opcode.SQRT]: [[SET, GET], (s) => { s.a = Math.sqrt(s.b); }],
+    [Opcode.CLZ]: [[SET, GET], (s) => { s.a = Math.clz32(s.b) - 24; }],
+    [Opcode.CTZ]: [[SET, GET], (s) => {
+            let trailingZeros = 32;
+            let num = s.b & -s.b;
+            if (num)
+                trailingZeros--;
+            if (num & 0x0000FFFF)
+                trailingZeros -= 16;
+            if (num & 0x00FF00FF)
+                trailingZeros -= 8;
+            if (num & 0x0F0F0F0F)
+                trailingZeros -= 4;
+            if (num & 0x33333333)
+                trailingZeros -= 2;
+            if (num & 0x55555555)
+                trailingZeros -= 1;
+            s.a = trailingZeros;
+        }],
+    [Opcode.BTC]: [[SET, GET], (s) => {
+            let num = s.b - ((s.b >> 1) & 0x55555555);
+            num = (num & 0x33333333) + ((num >> 2) & 0x33333333);
+            s.a = ((num + (num >> 4) & 0x0f0f0f0f) * 0x01010101) >> 24;
+        }]
 };
 export const inst_fns = object_map(Opcodes_operants, (key, value) => {
     if (value === undefined) {
         throw new Error("instruction definition undefined");
     }
-    return [key, value?.[1]];
+    return [key, value === null || value === void 0 ? void 0 : value[1]];
 }, []);
 export const Opcodes_operant_lengths = object_map(Opcodes_operants, (key, value) => {
     if (value === undefined) {
@@ -393,4 +429,3 @@ function fail_assert(ctx) {
         ctx.out(IO_Port.TEXT, message.charCodeAt(i));
     }
 }
-//# sourceMappingURL=instructions.js.map

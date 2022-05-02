@@ -26,7 +26,16 @@ export enum Opcode {
     __ASSERT,
     __ASSERT0,
     __ASSERT_EQ,
-    __ASSERT_NEQ
+    __ASSERT_NEQ,
+
+    //----- Custom CHUNUGUS Instructions
+    UMLT, //uper word mult
+    ADDV, //vector add
+    SUBV, //vector subtract
+    SQRT, //square root
+    CLZ, //count leading zeros
+    CTZ, //count trailing zeros
+    BTC, //bit count (count ones)
 }
 
 export enum Register {
@@ -259,6 +268,29 @@ export const Opcodes_operants: Record<Opcode, [Operant_Operation[], Instruction_
     [Opcode.__ASSERT0]: [[GET], (s) => {if (s.a) fail_assert(s) }],
     [Opcode.__ASSERT_EQ]: [[GET, GET], (s) => {if (s.a !== s.b) fail_assert(s)}],
     [Opcode.__ASSERT_NEQ]: [[GET, GET], (s) => {if (s.a === s.b) fail_assert(s)}],
+
+    //----- Custom CHUNGUS Instructions
+    [Opcode.UMLT ]: [[SET, GET, GET], (s) => { s.a = (s.b * s.c) >> s.bits }],
+    [Opcode.ADDV ]: [[SET, GET, GET], (s) => { s.a = (((s.b & 0xf0) + (s.c & 0xf0)) & 0xf0) | (((s.b & 0x0f) + (s.c & 0x0f)) & 0x0f) }],
+    [Opcode.SUBV ]: [[SET, GET, GET], (s) => { s.a = (((s.b & 0xf0) - (s.c & 0xf0)) & 0xf0) | (((s.b & 0x0f) - (s.c & 0x0f)) & 0x0f) }],
+    [Opcode.SQRT ]: [[SET, GET     ], (s) => { s.a = Math.sqrt(s.b) }],
+    [Opcode.CLZ  ]: [[SET, GET     ], (s) => { s.a = Math.clz32(s.b) - 24 }],
+    [Opcode.CTZ  ]: [[SET, GET     ], (s) => {
+        let trailingZeros = 32;
+        let num = s.b & -s.b;
+        if (num) trailingZeros--;
+        if (num & 0x0000FFFF) trailingZeros -= 16;
+        if (num & 0x00FF00FF) trailingZeros -= 8;
+        if (num & 0x0F0F0F0F) trailingZeros -= 4;
+        if (num & 0x33333333) trailingZeros -= 2;
+        if (num & 0x55555555) trailingZeros -= 1;
+        s.a = trailingZeros;
+    }],
+    [Opcode.BTC  ]: [[SET, GET     ], (s) => {
+        let num = s.b - ((s.b >> 1) & 0x55555555);
+        num = (num & 0x33333333) + ((num >> 2) & 0x33333333);
+        s.a = (( num + (num >> 4) & 0x0f0f0f0f) * 0x01010101) >> 24;
+    }]
 };
 
 export const inst_fns: Record<Opcode, Instruction_Callback> 
