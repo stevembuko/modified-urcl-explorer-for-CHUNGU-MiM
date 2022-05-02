@@ -13,7 +13,10 @@ import { Emulator, Step_Result } from "./emulator/emulator.js";
 import { parse } from "./emulator/parser.js";
 import { Arr, enum_from_str, enum_strings, expand_warning, registers_to_string, memoryToString, format_int } from "./emulator/util.js";
 import { Scroll_Out } from "./scroll-out/scroll-out.js";
-import { CraftingRom } from "./emulator/devices/CHUNGUS devices/CraftingRom.js";
+//CHUNGUS devices
+import { CraftingRom } from "./emulator/devices/CHUNGUS devices/craftingRom.js";
+import { PlayerInput } from "./emulator/devices/CHUNGUS devices/playerInput.js";
+import { BlockRAM } from "./emulator/devices/CHUNGUS devices/blockRAM.js";
 
 let animation_frame: number | undefined;
 let running = false;
@@ -195,7 +198,10 @@ emulator.add_io_device(new Clock());
 emulator.add_io_device(new Pad());
 emulator.add_io_device(new RNG());
 emulator.add_io_device(new Keyboard());
+//CHUNGUS devices
 emulator.add_io_device(new CraftingRom());
+emulator.add_io_device(new PlayerInput());
+emulator.add_io_device(new BlockRAM());
 
 source_input.oninput = oninput;
 auto_run_input.onchange = oninput;
