@@ -1,3 +1,4 @@
+var _a, _b, _c, _d;
 import { compile } from "./emulator/compiler.js";
 import { Clock } from "./emulator/devices/clock.js";
 import { Console_IO } from "./emulator/devices/console-io.js";
@@ -11,6 +12,7 @@ import { Storage } from "./emulator/devices/storage.js";
 import { Emulator, Step_Result } from "./emulator/emulator.js";
 import { parse } from "./emulator/parser.js";
 import { enum_from_str, enum_strings, expand_warning, registers_to_string, memoryToString, format_int } from "./emulator/util.js";
+import { CraftingRom } from "./emulator/devices/CHUNGUS devices/CraftingRom.js";
 let animation_frame;
 let running = false;
 let started = false;
@@ -38,12 +40,12 @@ const clock_speed_output = document.getElementById("clock-speed-output");
 const memory_update_input = document.getElementById("update-mem-input");
 const url = new URL(location.href, location.origin);
 const srcurl = url.searchParams.get("srcurl");
-const width = parseInt(url.searchParams.get("width") ?? "");
-const height = parseInt(url.searchParams.get("height") ?? "");
-const color = enum_from_str(Color_Mode, url.searchParams.get("color") ?? "");
+const width = parseInt((_a = url.searchParams.get("width")) !== null && _a !== void 0 ? _a : "");
+const height = parseInt((_b = url.searchParams.get("height")) !== null && _b !== void 0 ? _b : "");
+const color = enum_from_str(Color_Mode, (_c = url.searchParams.get("color")) !== null && _c !== void 0 ? _c : "");
 console.log(color);
 memory_update_input.oninput = () => update_views();
-const max_clock_speed = 40_000_000;
+const max_clock_speed = 40000000;
 const max_its = 1.2 * max_clock_speed / 16;
 clock_speed_input.oninput = change_clockspeed;
 function change_clockspeed() {
@@ -153,7 +155,7 @@ if (color !== undefined)
 color_mode_input.addEventListener("change", change_color_mode);
 function change_color_mode() {
     const color_mode = enum_from_str(Color_Mode, color_mode_input.value);
-    display.color_mode = color_mode ?? display.color_mode;
+    display.color_mode = color_mode !== null && color_mode !== void 0 ? color_mode : display.color_mode;
     display.update_display();
 }
 const width_input = document.getElementById("display-width");
@@ -176,6 +178,7 @@ emulator.add_io_device(new Clock());
 emulator.add_io_device(new Pad());
 emulator.add_io_device(new RNG());
 emulator.add_io_device(new Keyboard());
+emulator.add_io_device(new CraftingRom());
 source_input.oninput = oninput;
 auto_run_input.onchange = oninput;
 function oninput() {
@@ -392,6 +395,5 @@ else
         if (!Number.isInteger(offset)) {
             break autofill;
         }
-        source_input.value = localStorage.getItem(`history-${offset}`) ?? "";
+        source_input.value = (_d = localStorage.getItem(`history-${offset}`)) !== null && _d !== void 0 ? _d : "";
     }
-//# sourceMappingURL=index.js.map

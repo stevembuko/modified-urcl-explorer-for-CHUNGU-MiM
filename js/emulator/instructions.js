@@ -220,6 +220,43 @@ export var IO_Port;
     IO_Port[IO_Port["UD14"] = 61] = "UD14";
     IO_Port[IO_Port["UD15"] = 62] = "UD15";
     IO_Port[IO_Port["UD16"] = 63] = "UD16";
+    //CHUNGUS custom IO
+    //Crafting ROM
+    IO_Port[IO_Port["CRAFTROM"] = 64] = "CRAFTROM";
+    //player input
+    IO_Port[IO_Port["PI1"] = 65] = "PI1";
+    IO_Port[IO_Port["PI2"] = 66] = "PI2";
+    //block RAM
+    IO_Port[IO_Port["BLOCKRAM_XY"] = 67] = "BLOCKRAM_XY";
+    IO_Port[IO_Port["BLOCKRAM_ZI"] = 68] = "BLOCKRAM_ZI";
+    IO_Port[IO_Port["BLOCKRAM_ID"] = 67] = "BLOCKRAM_ID";
+    IO_Port[IO_Port["BLOCKRAM_SETID"] = 68] = "BLOCKRAM_SETID";
+    //blockToMesh
+    IO_Port[IO_Port["MESHGEN_XY"] = 69] = "MESHGEN_XY";
+    IO_Port[IO_Port["MESHGEN_ZI"] = 70] = "MESHGEN_ZI";
+    IO_Port[IO_Port["BLOCKGEN_BREAKPHASE"] = 71] = "BLOCKGEN_BREAKPHASE";
+    IO_Port[IO_Port["MESHGEN_ITEMXY"] = 72] = "MESHGEN_ITEMXY";
+    IO_Port[IO_Port["MESHGEN_ITEMZI"] = 73] = "MESHGEN_ITEMZI";
+    IO_Port[IO_Port["MESHGEN_RENDERITEM"] = 74] = "MESHGEN_RENDERITEM";
+    IO_Port[IO_Port["MESHGEN_RENDERBLOCK"] = 75] = "MESHGEN_RENDERBLOCK";
+    IO_Port[IO_Port["MESHGEN_RENDERSCENE"] = 76] = "MESHGEN_RENDERSCENE";
+    //AMOGUS
+    IO_Port[IO_Port["AMOGUS_CAMX"] = 77] = "AMOGUS_CAMX";
+    IO_Port[IO_Port["AMOGUS_CAMY"] = 78] = "AMOGUS_CAMY";
+    IO_Port[IO_Port["AMOGUS_CAMZ"] = 79] = "AMOGUS_CAMZ";
+    IO_Port[IO_Port["AMOGUS_CAMROT"] = 80] = "AMOGUS_CAMROT";
+    IO_Port[IO_Port["AMOGUS_VERTX"] = 81] = "AMOGUS_VERTX";
+    IO_Port[IO_Port["AMOGUS_VERTY"] = 82] = "AMOGUS_VERTY";
+    IO_Port[IO_Port["AMOGUS_VERTZ"] = 83] = "AMOGUS_VERTZ";
+    IO_Port[IO_Port["AMOGUS_VERTUV"] = 84] = "AMOGUS_VERTUV";
+    IO_Port[IO_Port["AMOGUS_TEX"] = 85] = "AMOGUS_TEX";
+    IO_Port[IO_Port["AMOGUS_SETTINGS"] = 86] = "AMOGUS_SETTINGS";
+    IO_Port[IO_Port["AMOGUS_CAMDIRX"] = 87] = "AMOGUS_CAMDIRX";
+    IO_Port[IO_Port["AMOGUS_CAMDIRY"] = 88] = "AMOGUS_CAMDIRY";
+    IO_Port[IO_Port["AMOGUS_CAMDIRZ"] = 89] = "AMOGUS_CAMDIRZ";
+    IO_Port[IO_Port["AMOGUS_SUBMITVERT"] = 90] = "AMOGUS_SUBMITVERT";
+    IO_Port[IO_Port["AMOGUS_DRAWQUAD"] = 91] = "AMOGUS_DRAWQUAD";
+    IO_Port[IO_Port["AMOGUS_CLEARBUFFER"] = 92] = "AMOGUS_CLEARBUFFER";
     IO_Port[IO_Port["GAMEPAD"] = 63] = "GAMEPAD";
     IO_Port[IO_Port["AXIS"] = 62] = "AXIS";
     IO_Port[IO_Port["KEY"] = 61] = "KEY";
@@ -383,9 +420,9 @@ export const Opcodes_operants = {
     [Opcode.__ASSERT_NEQ]: [[GET, GET], (s) => { if (s.a === s.b)
             fail_assert(s); }],
     //----- Custom CHUNGUS Instructions
-    [Opcode.UMLT]: [[SET, GET, GET], (s) => { s.a = (s.b * s.c) >> s.bits; }], //note: doesn't work on 32 bits
-    [Opcode.ADDV]: [[SET, GET, GET], (s) => { s.a = (((s.b & 0xf0) + (s.c & 0xf0)) & 0xf0) | (((s.b & 0x0f) + (s.c & 0x0f)) & 0x0f); }], //NOTE: only works on 8 bits
-    [Opcode.SUBV]: [[SET, GET, GET], (s) => { s.a = (((s.b & 0xf0) - (s.c & 0xf0)) & 0xf0) | (((s.b & 0x0f) - (s.c & 0x0f)) & 0x0f); }], //note: only works on 8 bits
+    [Opcode.UMLT]: [[SET, GET, GET], (s) => { s.a = (s.b * s.c) >> s.bits; }],
+    [Opcode.ADDV]: [[SET, GET, GET], (s) => { s.a = (((s.b & 0xf0) + (s.c & 0xf0)) & 0xf0) | (((s.b & 0x0f) + (s.c & 0x0f)) & 0x0f); }],
+    [Opcode.SUBV]: [[SET, GET, GET], (s) => { s.a = (((s.b & 0xf0) - (s.c & 0xf0)) & 0xf0) | (((s.b & 0x0f) - (s.c & 0x0f)) & 0x0f); }],
     [Opcode.SQRT]: [[SET, GET], (s) => { s.a = Math.sqrt(s.b); }],
     [Opcode.CLZ]: [[SET, GET], (s) => { s.a = Math.clz32(s.b) - 24; }],
     [Opcode.CTZ]: [[SET, GET], (s) => {
