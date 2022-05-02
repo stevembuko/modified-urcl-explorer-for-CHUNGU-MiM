@@ -113,4 +113,12 @@ export class BlockRAM implements Device {
             this.id = i & 0x0F;
         }
     }
+
+	public getBlock(x:number, y:number, z:number):number {
+		return this.blockGrid[x][y][z];
+	}
+
+	public setBlock(x:number, y:number, z:number, id:number) {
+		this.blockGrid[x][y][z] = id;
+	}
 }

@@ -16,6 +16,8 @@ import { enum_from_str, enum_strings, expand_warning, registers_to_string, memor
 import { CraftingRom } from "./emulator/devices/CHUNGUS devices/craftingRom.js";
 import { PlayerInput } from "./emulator/devices/CHUNGUS devices/playerInput.js";
 import { BlockRAM } from "./emulator/devices/CHUNGUS devices/blockRAM.js";
+import { BlockToMesh } from "./emulator/devices/CHUNGUS devices/blockToMesh.js";
+import { Amogus } from "./emulator/devices/CHUNGUS devices/amogus.js";
 let animation_frame;
 let running = false;
 let started = false;
@@ -184,7 +186,11 @@ emulator.add_io_device(new Keyboard());
 //CHUNGUS devices
 emulator.add_io_device(new CraftingRom());
 emulator.add_io_device(new PlayerInput());
-emulator.add_io_device(new BlockRAM());
+const blockRAM = new BlockRAM();
+emulator.add_io_device(blockRAM);
+const amogus = new Amogus();
+emulator.add_io_device(amogus);
+emulator.add_io_device(new BlockToMesh(blockRAM, amogus));
 source_input.oninput = oninput;
 auto_run_input.onchange = oninput;
 function oninput() {

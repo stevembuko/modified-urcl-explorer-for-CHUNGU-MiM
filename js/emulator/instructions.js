@@ -234,7 +234,7 @@ export var IO_Port;
     //blockToMesh
     IO_Port[IO_Port["MESHGEN_XY"] = 70] = "MESHGEN_XY";
     IO_Port[IO_Port["MESHGEN_ZI"] = 71] = "MESHGEN_ZI";
-    IO_Port[IO_Port["BLOCKGEN_BREAKPHASE"] = 72] = "BLOCKGEN_BREAKPHASE";
+    IO_Port[IO_Port["MESHGEN_BREAKPHASE"] = 72] = "MESHGEN_BREAKPHASE";
     IO_Port[IO_Port["MESHGEN_ITEMXY"] = 73] = "MESHGEN_ITEMXY";
     IO_Port[IO_Port["MESHGEN_ITEMZI"] = 74] = "MESHGEN_ITEMZI";
     IO_Port[IO_Port["MESHGEN_RENDERITEM"] = 75] = "MESHGEN_RENDERITEM";

@@ -112,4 +112,10 @@ export class BlockRAM {
             }
         };
     }
+    getBlock(x, y, z) {
+        return this.blockGrid[x][y][z];
+    }
+    setBlock(x, y, z, id) {
+        this.blockGrid[x][y][z] = id;
+    }
 }
