@@ -257,6 +257,7 @@ export var IO_Port;
     IO_Port[IO_Port["AMOGUS_SUBMITVERT"] = 91] = "AMOGUS_SUBMITVERT";
     IO_Port[IO_Port["AMOGUS_DRAWQUAD"] = 92] = "AMOGUS_DRAWQUAD";
     IO_Port[IO_Port["AMOGUS_CLEARBUFFER"] = 93] = "AMOGUS_CLEARBUFFER";
+    IO_Port[IO_Port["AMOGUS_DRAWTOSCREEN"] = 87] = "AMOGUS_DRAWTOSCREEN";
     IO_Port[IO_Port["GAMEPAD"] = 63] = "GAMEPAD";
     IO_Port[IO_Port["AXIS"] = 62] = "AXIS";
     IO_Port[IO_Port["KEY"] = 61] = "KEY";

@@ -168,8 +168,8 @@ const gl = canvas.getContext("webgl2");
 if (!gl){
     throw new Error("Unable to get webgl rendering context");
 }
-canvas.width = width || 32;
-canvas.height = height || 32;
+canvas.width = width || 96;
+canvas.height = height || 64;
 const display = new Gl_Display(gl, color);
 const color_mode_input = document.getElementById("color-mode") as HTMLOptionElement;
 if (color !== undefined) color_mode_input.value = Color_Mode[color];
@@ -205,7 +205,7 @@ emulator.add_io_device(new CraftingRom());
 emulator.add_io_device(new PlayerInput());
 const blockRAM = new BlockRAM();
 emulator.add_io_device(blockRAM);
-const amogus = new Amogus();
+const amogus = new Amogus(display);
 emulator.add_io_device(amogus);
 emulator.add_io_device(new BlockToMesh(blockRAM, amogus));
 

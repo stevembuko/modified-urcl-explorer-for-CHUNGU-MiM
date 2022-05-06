@@ -133,9 +133,7 @@ export class Amogus {
         }
     }
     drawQuad(quad) {
-        log(quad);
         if (quad[0].z < CLIP && quad[1].z < CLIP && quad[2].z < CLIP && quad[3].z < CLIP) {
-            console.log("near cull");
             return;
         }
         let output = [];
@@ -147,14 +145,13 @@ export class Amogus {
             let invDenom, lerped, t;
             if (toV.z === fromV.z) {
                 t = 0;
-            }
-            else {
+            } else {
                 invDenom = this.FixedPointNumber(1 / Math.abs(fromV.z - toV.z), 16, 8);
                 t = this.FixedPointNumber(Math.abs(fromV.z - at) * invDenom, 16, 15);
             }
             lerped = new Vertex;
             let _do = (fr, to, pre, s = true) => {
-                var e;
+                let e;
                 e = this.FixedPointNumber(this.FixedPointNumber(Math.abs(to - fr) * t, 16, pre) * (to >= fr ? 1 : -1), 16, pre, s);
                 return this.FixedPointNumber(fr + e, 16, pre, s);
             };
@@ -172,8 +169,7 @@ export class Amogus {
                 lerped = lerpAtZ(prev, next[0], CLIP);
                 output.push(lerped);
                 prev = lerped;
-            }
-            else {
+            } else {
                 prev = next[0];
                 if (nextVisible) {
                     output.push(prev);
@@ -194,74 +190,54 @@ export class Amogus {
         }
     }
     Do_Full_Quad(v1, v2, v3, v4) {
-        //log([v1, v2, v3, v4]);
-        var _a, _b, _c, _d;
         v1 = this.Cam_To_Screen(v1);
         v2 = this.Cam_To_Screen(v2);
         v3 = this.Cam_To_Screen(v3);
         v4 = this.Cam_To_Screen(v4);
-
-
         if (this.IsBackfacing(v1, v2, v3)) {
-            console.log("backfacing");
             if (this.settings.cullBackface) {
                 return;
-            }
-            else {
+            } else {
                 let temp = v2;
                 v2 = v4;
                 v4 = temp;
             }
         }
         if (v1.x >= SCREEN_WIDTH && v2.x >= SCREEN_WIDTH && v3.x >= SCREEN_WIDTH && v4.x >= SCREEN_WIDTH) {
-            console.log("frustum cull");
             return;
         }
         if (v1.x < 0 && v2.x < 0 && v3.x < 0 && v4.x < 0) {
-            console.log("frustum cull");
             return;
         }
         if (v1.y >= SCREEN_HEIGHT && v2.y >= SCREEN_HEIGHT && v3.y >= SCREEN_HEIGHT && v4.y >= SCREEN_HEIGHT) {
-            console.log("frustum cull");
             return;
         }
         if (v1.y < 0 && v2.y < 0 && v3.y < 0 && v4.y < 0) {
-            console.log("frustum cull");
             return;
         }
-
-        //log([v1, v2, v3, v4]);
         let highest = 1, highY = v1.y;
         if (v2.y > highY) {
-            highest = 2;
-            highY = v2.y;
+            highest = 2, highY = v2.y;
         }
         if (v3.y > highY) {
-            highest = 3;
-            highY = v3.y;
+            highest = 3, highY = v3.y;
         }
         if (v4.y > highY) {
-            highest = 4;
-            highY = v4.y;
+            highest = 4, highY = v4.y;
         }
         let vertices = [v1, v2, v3, v4];
         for (let i = 0; i < highest; i++) {
             vertices = vertices.slice(1).concat(vertices.slice(0, 1));
         }
-        log(vertices);
         let left = [vertices[2], vertices[1], vertices[0], vertices[3]];
         let right = vertices;
-        log(left);
-        log(right);
-
         let currLeft = left.pop();
         let currRight = right.pop();
         let lerpAtY = (fromV, toV, at) => {
             let invDenom, lerped, t;
             if (toV.y === fromV.y) {
                 t = 0;
-            }
-            else {
+            } else {
                 invDenom = this.FixedPointNumber(1 / (fromV.y - toV.y), 16, 15);
                 t = this.FixedPointNumber((fromV.y - at) * invDenom, 16, 15);
             }
@@ -278,7 +254,6 @@ export class Amogus {
             lerped.v = _do(fromV.v, toV.v, 15, false);
             return lerped;
         };
-
         let at, boolValue, fromV, lerped, toV;
         for (let loop = 0, _pj_a = 3; loop < _pj_a; loop += 1) {
             boolValue = left.slice(-1)[0].y < right.slice(-1)[0].y;
@@ -291,15 +266,11 @@ export class Amogus {
             currRight = boolValue ? right.pop() : lerped;
         }
     }
-
-
     Draw_Flat_Quad(texture, bl, tl, br, tr, loop) {
-        //log([tl, tr, bl, br]);
         let invDenom;
         if (tl.y == bl.y) {
             invDenom = 0;
-        }
-        else {
+        } else {
             invDenom = this.FixedPointNumber(1 / (tl.y - bl.y), 16, 15);
         }
         let bly = Math.floor(bl.y);
@@ -352,12 +323,10 @@ export class Amogus {
         if (Math.floor(ex) == Math.floor(sx)) {
             dz = 0, du = 0, dv = 0;
             inv = 0;
-        }
-        else {
+        } else {
             if (ex - sx >= 1) {
                 inv = this.FixedPointNumber(1 / (ex - sx), 17, 16);
-            }
-            else {
+            } else {
                 inv = 0;
             }
             let ddu = Math.abs(this.FixedPointNumber((eu - su), 16, 15, true));
@@ -434,7 +403,7 @@ export class Amogus {
         return (crossProduct < 0);
     }
     Cam_To_Screen(vertex) {
-        var invZ, nvx, nvy, persp, process, vu, vv, vx, vy, vz;
+        let invZ, nvx, nvy, persp, vu, vv, vx, vy, vz;
         vx = vertex.x;
         vy = vertex.y;
         vz = vertex.z;
@@ -476,7 +445,7 @@ export class Amogus {
         ];
     }
     world_to_cam(vertex) {
-        var ovx, ovy, ovz, vx, vy, vz;
+        let ovx, ovy, ovz, vx, vy, vz;
         ovx = vertex.x - this.cam.x;
         ovy = vertex.y - this.cam.y;
         ovz = vertex.z - this.cam.z;
@@ -486,7 +455,6 @@ export class Amogus {
         return new Vertex(vx, vy, vz, vertex.u, vertex.v);
     }
     FixedPointNumber(value, bits, precision, signed = false, f = false) {
-        //return value;
         this.operations += 1;
         let bitmask = (1 << bits) - 1;
         let shiftamount = 1 << precision;
@@ -511,12 +479,4 @@ class Vertex {
         this.v = v;
     }
 }
-
-function log (...args) {
-    try {
-        args = args.map((arg) => JSON.parse(JSON.stringify(arg)));
-        console.log(...args);
-    } catch (error) {
-        console.log('Error trying to log()', ...args);
-    }
-}
+;
