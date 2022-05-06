@@ -3,7 +3,7 @@ import { IO_Port } from "../../instructions.js";
 const CLIP = 3;
 const SCREEN_WIDTH = 96;
 const SCREEN_HEIGHT = 64;
-const LENS = 896;
+const LENS = 56;
 export class Amogus {
     constructor(display) {
         this.cam = {
@@ -76,7 +76,7 @@ export class Amogus {
                 return 0;
             },
             [IO_Port.AMOGUS_DRAWQUAD]: () => {
-                this.drawQuad(this.quad, this.texture, this.settings);
+                this.drawQuad(this.quad);
                 return 0;
             },
             [IO_Port.AMOGUS_CLEARBUFFER]: () => {
@@ -132,8 +132,10 @@ export class Amogus {
             }
         }
     }
-    drawQuad(quad, texture, settings) {
+    drawQuad(quad) {
+        log(quad);
         if (quad[0].z < CLIP && quad[1].z < CLIP && quad[2].z < CLIP && quad[3].z < CLIP) {
+            console.log("near cull");
             return;
         }
         let output = [];
@@ -170,7 +172,8 @@ export class Amogus {
                 lerped = lerpAtZ(prev, next[0], CLIP);
                 output.push(lerped);
                 prev = lerped;
-            } else {
+            }
+            else {
                 prev = next[0];
                 if (nextVisible) {
                     output.push(prev);
@@ -184,20 +187,23 @@ export class Amogus {
         } else {
             if (output.length === 4) {
                 this.Do_Full_Quad(output[0], output[1], output[2], output[3]);
-            }
-            else {
+            } else {
                 this.Do_Full_Quad(output[0], output[1], output[2], output[3]);
                 this.Do_Full_Quad(output[0], output[3], output[4], output[4]);
             }
         }
     }
     Do_Full_Quad(v1, v2, v3, v4) {
+        //log([v1, v2, v3, v4]);
         var _a, _b, _c, _d;
         v1 = this.Cam_To_Screen(v1);
         v2 = this.Cam_To_Screen(v2);
         v3 = this.Cam_To_Screen(v3);
         v4 = this.Cam_To_Screen(v4);
+
+
         if (this.IsBackfacing(v1, v2, v3)) {
+            console.log("backfacing");
             if (this.settings.cullBackface) {
                 return;
             }
@@ -207,41 +213,49 @@ export class Amogus {
                 v4 = temp;
             }
         }
-        if (v1.x > SCREEN_WIDTH && v2.x > SCREEN_WIDTH && v3.x > SCREEN_WIDTH && v4.x > SCREEN_WIDTH) {
+        if (v1.x >= SCREEN_WIDTH && v2.x >= SCREEN_WIDTH && v3.x >= SCREEN_WIDTH && v4.x >= SCREEN_WIDTH) {
+            console.log("frustum cull");
             return;
         }
         if (v1.x < 0 && v2.x < 0 && v3.x < 0 && v4.x < 0) {
+            console.log("frustum cull");
             return;
         }
-        if (v1.y > SCREEN_HEIGHT && v2.y > SCREEN_HEIGHT && v3.y > SCREEN_HEIGHT && v4.y > SCREEN_HEIGHT) {
+        if (v1.y >= SCREEN_HEIGHT && v2.y >= SCREEN_HEIGHT && v3.y >= SCREEN_HEIGHT && v4.y >= SCREEN_HEIGHT) {
+            console.log("frustum cull");
             return;
         }
         if (v1.y < 0 && v2.y < 0 && v3.y < 0 && v4.y < 0) {
+            console.log("frustum cull");
             return;
         }
-        log([v1, v2, v3, v4]);
+
+        //log([v1, v2, v3, v4]);
         let highest = 1, highY = v1.y;
         if (v2.y > highY) {
-            highest = 2, highY = v2.y;
+            highest = 2;
+            highY = v2.y;
         }
         if (v3.y > highY) {
-            highest = 3, highY = v3.y;
+            highest = 3;
+            highY = v3.y;
         }
         if (v4.y > highY) {
-            highest = 4, highY = v4.y;
+            highest = 4;
+            highY = v4.y;
         }
         let vertices = [v1, v2, v3, v4];
-        for (let i = 0; i < highest - 1; i++) {
+        for (let i = 0; i < highest; i++) {
             vertices = vertices.slice(1).concat(vertices.slice(0, 1));
         }
-        log([v1, v2, v3, v4]);
-        let left = vertices.reverse();
-        left = left.slice(1).concat(left.slice(0, 1));
-        left = left.slice(1).concat(left.slice(0, 1));
-        left = left.slice(1).concat(left.slice(0, 1));
-        let right = [vertices[0], vertices[1], vertices[2], vertices[3]];
-        let currLeft = (_a = left.pop()) !== null && _a !== void 0 ? _a : new Vertex();
-        let currRight = (_b = right.pop()) !== null && _b !== void 0 ? _b : new Vertex();
+        log(vertices);
+        let left = [vertices[2], vertices[1], vertices[0], vertices[3]];
+        let right = vertices;
+        log(left);
+        log(right);
+
+        let currLeft = left.pop();
+        let currRight = right.pop();
         let lerpAtY = (fromV, toV, at) => {
             let invDenom, lerped, t;
             if (toV.y === fromV.y) {
@@ -264,19 +278,23 @@ export class Amogus {
             lerped.v = _do(fromV.v, toV.v, 15, false);
             return lerped;
         };
+
         let at, boolValue, fromV, lerped, toV;
-        for (var loop = 0, _pj_a = 3; loop < _pj_a; loop += 1) {
+        for (let loop = 0, _pj_a = 3; loop < _pj_a; loop += 1) {
             boolValue = left.slice(-1)[0].y < right.slice(-1)[0].y;
             fromV = boolValue ? currLeft : currRight;
             toV = boolValue ? left.slice(-1)[0] : right.slice(-1)[0];
             at = boolValue ? right.slice(-1)[0].y : left.slice(-1)[0].y;
             lerped = lerpAtY(fromV, toV, at);
             this.Draw_Flat_Quad(this.texture, (boolValue ? lerped : left.slice(-1)[0]), currLeft, (boolValue ? right.slice(-1)[0] : lerped), currRight, loop);
-            currLeft = boolValue ? lerped : (_c = left.pop()) !== null && _c !== void 0 ? _c : new Vertex();
-            currRight = boolValue ? (_d = right.pop()) !== null && _d !== void 0 ? _d : new Vertex() : lerped;
+            currLeft = boolValue ? lerped : left.pop();
+            currRight = boolValue ? right.pop() : lerped;
         }
     }
+
+
     Draw_Flat_Quad(texture, bl, tl, br, tr, loop) {
+        //log([tl, tr, bl, br]);
         let invDenom;
         if (tl.y == bl.y) {
             invDenom = 0;
@@ -409,12 +427,14 @@ export class Amogus {
         }
     }
     IsBackfacing(v1, v2, v3) {
-        let crossProduct = this.FixedPointNumber((v3.x - v1.x) * (v1.x - v2.y), 17, 0, true);
-        crossProduct -= this.FixedPointNumber((v1.y - v3.y) * (v2.x - v1.x), 17, 0, true);
-        return crossProduct < 0;
+        let crossProduct = (
+            this.FixedPointNumber((v3.x - v1.x) * (v1.y - v2.y), 17, 0, true)
+            - this.FixedPointNumber((v1.y - v3.y) * (v2.x - v1.x), 17, 0, true)
+        );
+        return (crossProduct < 0);
     }
     Cam_To_Screen(vertex) {
-        var invZ, nvx, nvy, persp, vu, vv, vx, vy, vz;
+        var invZ, nvx, nvy, persp, process, vu, vv, vx, vy, vz;
         vx = vertex.x;
         vy = vertex.y;
         vz = vertex.z;
@@ -449,12 +469,11 @@ export class Amogus {
         let cos = (ang) => {
             return this.FixedPointNumber(Math.abs(Math.cos(ang)), 16, 14) * (Math.cos(ang) > 0 ? 1 : -1);
         };
-        let matr = [
+        return [
             [cos(c), 0, sin(c)],
             [sin(b) * sin(c), cos(b), -sin(b) * cos(c)],
             [-cos(b) * sin(c), sin(b), cos(b) * cos(c)]
         ];
-        return matr;
     }
     world_to_cam(vertex) {
         var ovx, ovy, ovz, vx, vy, vz;
@@ -463,10 +482,11 @@ export class Amogus {
         ovz = vertex.z - this.cam.z;
         vx = this.FixedPointNumber(this.cam.matrix[0][0] * ovx + this.cam.matrix[0][1] * ovy + this.cam.matrix[0][2] * ovz, 16, 11, true);
         vy = this.FixedPointNumber(this.cam.matrix[1][0] * ovx + this.cam.matrix[1][1] * ovy + this.cam.matrix[1][2] * ovz, 16, 11, true);
-        vz = this.FixedPointNumber(16 * (this.cam.matrix[2][0] * ovx + this.cam.matrix[2][1] * ovy + this.cam.matrix[2][2] * ovz), 16, 7, true);
+        vz = this.FixedPointNumber(this.cam.matrix[2][0] * ovx + this.cam.matrix[2][1] * ovy + this.cam.matrix[2][2] * ovz, 16, 7, true);
         return new Vertex(vx, vy, vz, vertex.u, vertex.v);
     }
     FixedPointNumber(value, bits, precision, signed = false, f = false) {
+        //return value;
         this.operations += 1;
         let bitmask = (1 << bits) - 1;
         let shiftamount = 1 << precision;
@@ -491,7 +511,6 @@ class Vertex {
         this.v = v;
     }
 }
-;
 
 function log (...args) {
     try {
@@ -500,4 +519,4 @@ function log (...args) {
     } catch (error) {
         console.log('Error trying to log()', ...args);
     }
-};
+}
