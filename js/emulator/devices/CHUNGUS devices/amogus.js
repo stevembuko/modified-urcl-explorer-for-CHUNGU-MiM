@@ -1,5 +1,5 @@
 import { IO_Port } from "../../instructions.js";
-//TODO import screen
+//TODO: maybe import screen
 const CLIP = 3;
 const SCREEN_WIDTH = 96;
 const SCREEN_HEIGHT = 64;
@@ -15,13 +15,13 @@ export class Amogus {
         this.currentVertex = new Vertex();
         this.quad = [new Vertex(), new Vertex(), new Vertex(), new Vertex()];
         this.texture = {
-            transparent: false,
-            inverted: false,
-            overlay: false,
             id: 0
         };
         this.settings = {
-            cullBackface: true
+            cullBackface: true,
+            transparent: false,
+            inverted: false,
+            overlay: false,
         };
         this.zbuffer = [];
         this.outputs = {
@@ -51,13 +51,13 @@ export class Amogus {
                 this.currentVertex.v = i & 0xF;
             },
             [IO_Port.AMOGUS_TEX]: (i) => {
-                this.texture.transparent = (i & 0x80) != 0;
-                this.texture.inverted = (i & 0x40) != 0;
-                this.texture.overlay = (i & 0x20) != 0;
-                this.texture.id = i & 0x0F;
+                this.texture.id = i;
             },
             [IO_Port.AMOGUS_SETTINGS]: (i) => {
-                this.settings.cullBackface = (i & 0x80) != 0;
+                this.settings.cullBackface = (i & 0x08) != 0;
+                this.settings.transparent = (i & 0x04) != 0;
+                this.settings.inverted = (i & 0x02) != 0;
+                this.settings.overlay = (i & 0x01) != 0;
             }
         };
         this.inputs = {
@@ -133,6 +133,9 @@ export class Amogus {
         }
     }
     drawQuad(quad) {
+        if (this.texROM[texture.id] === undefined) {
+            console.log("texture ID [ " + texture.id + " ] does not exist"); //warn if texture doesn't exist
+        }
         if (quad[0].z < CLIP && quad[1].z < CLIP && quad[2].z < CLIP && quad[3].z < CLIP) {
             return;
         }
@@ -145,7 +148,8 @@ export class Amogus {
             let invDenom, lerped, t;
             if (toV.z === fromV.z) {
                 t = 0;
-            } else {
+            }
+            else {
                 invDenom = this.FixedPointNumber(1 / Math.abs(fromV.z - toV.z), 16, 8);
                 t = this.FixedPointNumber(Math.abs(fromV.z - at) * invDenom, 16, 15);
             }
@@ -169,7 +173,8 @@ export class Amogus {
                 lerped = lerpAtZ(prev, next[0], CLIP);
                 output.push(lerped);
                 prev = lerped;
-            } else {
+            }
+            else {
                 prev = next[0];
                 if (nextVisible) {
                     output.push(prev);
@@ -180,10 +185,12 @@ export class Amogus {
         }
         if (output.length === 3) {
             this.Do_Full_Quad(output[0], output[1], output[2], output[2]);
-        } else {
+        }
+        else {
             if (output.length === 4) {
                 this.Do_Full_Quad(output[0], output[1], output[2], output[3]);
-            } else {
+            }
+            else {
                 this.Do_Full_Quad(output[0], output[1], output[2], output[3]);
                 this.Do_Full_Quad(output[0], output[3], output[4], output[4]);
             }
@@ -197,7 +204,8 @@ export class Amogus {
         if (this.IsBackfacing(v1, v2, v3)) {
             if (this.settings.cullBackface) {
                 return;
-            } else {
+            }
+            else {
                 let temp = v2;
                 v2 = v4;
                 v4 = temp;
@@ -237,7 +245,8 @@ export class Amogus {
             let invDenom, lerped, t;
             if (toV.y === fromV.y) {
                 t = 0;
-            } else {
+            }
+            else {
                 invDenom = this.FixedPointNumber(1 / (fromV.y - toV.y), 16, 15);
                 t = this.FixedPointNumber((fromV.y - at) * invDenom, 16, 15);
             }
@@ -270,7 +279,8 @@ export class Amogus {
         let invDenom;
         if (tl.y == bl.y) {
             invDenom = 0;
-        } else {
+        }
+        else {
             invDenom = this.FixedPointNumber(1 / (tl.y - bl.y), 16, 15);
         }
         let bly = Math.floor(bl.y);
@@ -326,7 +336,8 @@ export class Amogus {
         } else {
             if (ex - sx >= 1) {
                 inv = this.FixedPointNumber(1 / (ex - sx), 17, 16);
-            } else {
+            }
+            else {
                 inv = 0;
             }
             let ddu = Math.abs(this.FixedPointNumber((eu - su), 16, 15, true));
@@ -374,14 +385,16 @@ export class Amogus {
                     let divv = do_16_bit_div(this.FixedPointNumber(v + (this.FixedPointNumber(dv, 16, 15, true) - dv) * (offset % 2), 16, 15, true), this.FixedPointNumber(z + (this.FixedPointNumber(dz, 16, 15, true) - dz) * (offset % 2), 16, 15, true));
                     let a = Math.max(0, Math.min(7, Math.floor(8 * divu)));
                     let b = Math.max(0, Math.min(7, Math.floor(8 * divv)));
-                    let color = this.texROM[texture.id][8 * (7 - b) + a];
-                    if (texture.transparent && !color) {
+                    let sampledTexture = this.texROM[texture.id] ?? this.texROM[0];
+                    let color = sampledTexture[8 * (7 - b) + a];
+                    
+                    if (this.settings.transparent && !color) {
                         continue;
                     }
-                    if (texture.inverted) {
+                    if (this.settings.inverted) {
                         color = !color;
                     }
-                    if (texture.overlay) {
+                    if (this.settings.overlay) {
                         color = t[1] != 0 ? !color : color;
                     }
                     this.zbuffer[y][x] = [
@@ -396,10 +409,8 @@ export class Amogus {
         }
     }
     IsBackfacing(v1, v2, v3) {
-        let crossProduct = (
-            this.FixedPointNumber((v3.x - v1.x) * (v1.y - v2.y), 17, 0, true)
-            - this.FixedPointNumber((v1.y - v3.y) * (v2.x - v1.x), 17, 0, true)
-        );
+        let crossProduct = (this.FixedPointNumber((v3.x - v1.x) * (v1.y - v2.y), 17, 0, true)
+            - this.FixedPointNumber((v1.y - v3.y) * (v2.x - v1.x), 17, 0, true));
         return (crossProduct < 0);
     }
     Cam_To_Screen(vertex) {
@@ -465,7 +476,7 @@ export class Amogus {
         return value / shiftamount;
     }
 }
-class Vertex {
+export class Vertex {
     constructor(x = 0, y = 0, z = 0, u = 0, v = 0) {
         this.x = 0;
         this.y = 0;
