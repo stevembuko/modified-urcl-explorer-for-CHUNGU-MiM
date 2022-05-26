@@ -1,7 +1,7 @@
 import { Device } from "../device.js";
 import { IO_Port } from "../../instructions.js";
 import { Gl_Display } from "../gl-display.js";
-//TODO import screen
+//TODO: maybe import screen
 
 const CLIP = 3;
 const SCREEN_WIDTH = 96;
@@ -18,14 +18,12 @@ export class Amogus implements Device {
     display:Gl_Display;
     currentVertex:Vertex = new Vertex();
     quad:Vertex[] = [new Vertex(), new Vertex(), new Vertex(), new Vertex()];
-    texture = {
+    texture = 0;
+    settings = {
+        cullBackface: true,
         transparent: false,
         inverted: false,
         overlay: false,
-        id: 0
-    };
-    settings = {
-        cullBackface: true
     };
     zbuffer:number[][][] = [];
     constructor(display:Gl_Display) {
@@ -59,13 +57,13 @@ export class Amogus implements Device {
             this.currentVertex.v = i & 0xF;
         },
         [IO_Port.AMOGUS_TEX]: (i:number) => {
-            this.texture.transparent = (i & 0x80) != 0;
-            this.texture.inverted = (i & 0x40) != 0;
-            this.texture.overlay = (i & 0x20) != 0;
-            this.texture.id = i & 0x0F;
+            this.texture = i;
         },
         [IO_Port.AMOGUS_SETTINGS]: (i:number) => {
-            this.settings.cullBackface = (i & 0x80) != 0;
+            this.settings.cullBackface = (i & 0x08) != 0;
+            this.settings.transparent = (i & 0x04) != 0;
+            this.settings.inverted = (i & 0x02) != 0;
+            this.settings.overlay = (i & 0x01) != 0;
         }
     }
     inputs = {
@@ -105,6 +103,8 @@ export class Amogus implements Device {
                 this.display.color_out(this.zbuffer[y][x][1]);
             }
         }
+        this.display.update_display();
+        this.display.clear();
     }
 
     resetBuffer() {
@@ -118,6 +118,10 @@ export class Amogus implements Device {
     }
 
     drawQuad(quad:Vertex[]) {
+        if (Textures[this.texture] === undefined) {
+            console.log("texture ID [ " + this.texture + " ] does not exist"); //warn if texture doesn't exist
+        }
+
         if (quad[0].z < CLIP && quad[1].z < CLIP && quad[2].z < CLIP && quad[3].z < CLIP) {
             return;
         }
@@ -134,7 +138,7 @@ export class Amogus implements Device {
             if (toV.z === fromV.z) {
                 t = 0;
             } else {
-                invDenom = this.FixedPointNumber(1 / Math.abs(fromV.z - toV.z), 16, 8);
+                invDenom = this.FixedPointNumber(1 / Math.abs(fromV.z - toV.z), 16, 15);
                 t = this.FixedPointNumber(Math.abs(fromV.z - at) * invDenom, 16, 15);
             }
 
@@ -146,8 +150,8 @@ export class Amogus implements Device {
                 return this.FixedPointNumber(fr + e, 16, pre, s);
             }
 
-            lerped.x = _do(fromV.x, toV.x, 11);
-            lerped.y = _do(fromV.y, toV.y, 11);
+            lerped.x = _do(fromV.x, toV.x, 7);
+            lerped.y = _do(fromV.y, toV.y, 7);
             lerped.z = at;
             lerped.u = _do(fromV.u, toV.u, 15);
             lerped.v = _do(fromV.v, toV.v, 15);
@@ -421,19 +425,23 @@ export class Amogus implements Device {
                     );
                     let a = Math.max(0, Math.min(7, Math.floor(8 * divu)));
                     let b = Math.max(0, Math.min(7, Math.floor(8 * divv)));
-                    let color:boolean = this.texROM[texture.id][8 * (7 - b) + a];
-                    if (texture.transparent && !color) {
-                        continue
+                    let sampledTexture = Textures[texture] ?? Textures[0];
+                    let color = sampledTexture[8 * (7 - b) + a];
+                    if (this.settings.transparent && color == 0) {
+                        z += dz;
+                        u += du;
+                        v += dv;
+                        continue;
                     }
-                    if (texture.inverted) {
-                        color = !color;
+                    if (this.settings.inverted) {
+                        color = color ^ 1;
                     }
-                    if (texture.overlay) {
-                        color = t[1] != 0 ? !color : color;
+                    if (this.settings.overlay) {
+                        color = color ^ t[1];
                     }
                     this.zbuffer[y][x] = [
                         Math.floor(Math.min(127, 512 * z)),
-                        color ? 1 : 0
+                        color
                     ]
                 }
             }
@@ -459,7 +467,7 @@ export class Amogus implements Device {
         vy = vertex.y;
         vz = vertex.z;
         invZ = this.FixedPointNumber(1 / vz, 17, 16);
-        persp = this.FixedPointNumber(LENS * invZ, 16, 6);
+        persp = this.FixedPointNumber(LENS * invZ, 16, 10);
         vx = this.FixedPointNumber(Math.abs(vx) * persp, 16, 0) * (vx >= 0 ? 1 : -1);
         vy = this.FixedPointNumber(Math.abs(vy) * persp, 16, 0) * (vy >= 0 ? 1 : -1);
         nvx = this.FixedPointNumber(vx + Math.floor(SCREEN_WIDTH / 2), 16, 0, true);
@@ -511,8 +519,8 @@ export class Amogus implements Device {
         ovx = vertex.x - this.cam.x;
         ovy = vertex.y - this.cam.y;
         ovz = vertex.z - this.cam.z;
-        vx = this.FixedPointNumber(this.cam.matrix[0][0] * ovx + this.cam.matrix[0][1] * ovy + this.cam.matrix[0][2] * ovz, 16, 11, true );
-        vy = this.FixedPointNumber(this.cam.matrix[1][0] * ovx + this.cam.matrix[1][1] * ovy + this.cam.matrix[1][2] * ovz, 16, 11, true );
+        vx = this.FixedPointNumber(this.cam.matrix[0][0] * ovx + this.cam.matrix[0][1] * ovy + this.cam.matrix[0][2] * ovz, 16, 7, true );
+        vy = this.FixedPointNumber(this.cam.matrix[1][0] * ovx + this.cam.matrix[1][1] * ovy + this.cam.matrix[1][2] * ovz, 16, 7, true );
         vz = this.FixedPointNumber(this.cam.matrix[2][0] * ovx + this.cam.matrix[2][1] * ovy + this.cam.matrix[2][2] * ovz, 16, 7, true );
         return new Vertex(vx, vy, vz, vertex.u, vertex.v);
     }
@@ -524,39 +532,157 @@ export class Amogus implements Device {
         let shiftamount = 1 << precision;
         value = Math.floor(value * shiftamount) & bitmask;
 
-        if (signed && value > 1 << bits - 1) {
+        if (signed && value > 1 << (bits - 1)) {
             return (value - (1 << bits)) / shiftamount;
         }
 
         return value / shiftamount;
     }
-
-    texROM:any = {
-        0: [
-            false, false, false, false, false, false, false, false,
-            false, false, false, false, false, false, false, false,
-            false, false, false, false, false, false, false, false,
-            false, false, false, false, false, false, false, false,
-            false, false, false, false, false, false, false, false,
-            false, false, false, false, false, false, false, false,
-            false, false, false, false, false, false, false, false,
-            false, false, false, false, false, false, false, false
-        ],
-        1: [
-            true, false, true, false, true, false, true, false,
-            false, true, false, true, false, true, false, true,
-            true, false, true, false, true, false, true, false,
-            false, true, false, true, false, true, false, true,
-            true, false, true, false, true, false, true, false,
-            false, true, false, true, false, true, false, true,
-            true, false, true, false, true, false, true, false,
-            false, true, false, true, false, true, false, true
-        ]
-    }
-
 }
 
-class Vertex {
+export enum Texture {
+    empty = 0x00, //invert for grass top
+    checker = 0x01, //the test texture
+    grassSide = 0x02,
+    dirt = 0x03, //also grass bottom
+    stone = 0x04,
+    cobble = 0x05,
+    logSide = 0x06,
+    logTop = 0x07,
+    leaves = 0x08,
+    plank = 0x09, //also table bottom
+    coalOre = 0x0A,
+    ironOre = 0x0B,
+    glass = 0x0C,
+    saplingLight = 0x0D, //the white pixels in the sapling texture
+    saplingDark = 0x0E, //the black pixels in teh sapling texture
+    tableSide = 0x0F,
+    tableTop = 0x10,
+    furnaceSide = 0x11,
+    furnaceTop = 0x12,
+    furnaceFrontOff = 0x13,
+    furnaceFrontOn = 0x14,
+    chestSide = 0x15,
+    chestTop = 0x16,
+    chestFront = 0x17,
+
+    coalItemLight = 0x17,
+    coalItemDark = 0x18,
+
+    shadow = 0x19,
+
+    break0 = 0x1A,
+    break1 = 0x1B,
+    break2 = 0x1C,
+    break3 = 0x1D,
+    break4 = 0x1E,
+    break5 = 0x1F,
+}
+
+const Textures:any = {
+    [Texture.empty]: [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    [Texture.checker]: [
+        1, 0, 1, 0, 1, 0, 1, 0,
+        0, 1, 0, 1, 0, 1, 0, 1,
+        1, 0, 1, 0, 1, 0, 1, 0,
+        0, 1, 0, 1, 0, 1, 0, 1,
+        1, 0, 1, 0, 1, 0, 1, 0,
+        0, 1, 0, 1, 0, 1, 0, 1,
+        1, 0, 1, 0, 1, 0, 1, 0,
+        0, 1, 0, 1, 0, 1, 0, 1,
+    ],
+    [Texture.saplingDark]: [
+        0, 0, 0, 1, 1, 0, 0, 0,
+        0, 0, 0, 1, 0, 0, 0, 0,
+        0, 0, 1, 1, 1, 1, 0, 0,
+        0, 1, 1, 0, 0, 1, 1, 0,
+        0, 0, 0, 1, 1, 0, 0, 0,
+        0, 0, 1, 0, 1, 1, 0, 0,
+        0, 0, 0, 0, 0, 1, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    [Texture.saplingLight]: [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 1, 0, 0, 0,
+        1, 1, 0, 0, 0, 0, 1, 1,
+        0, 0, 0, 1, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 1,
+        0, 1, 0, 0, 0, 0, 1, 0,
+        0, 0, 1, 1, 0, 0, 1, 0,
+        0, 1, 0, 0, 0, 1, 0, 0,
+    ],
+    [Texture.grassSide]: [
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 0, 1, 1, 1, 1, 1, 0,
+        0, 0, 0, 0, 1, 0, 0, 0,
+        0, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    [Texture.dirt]: [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    [Texture.stone]: [
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 0, 0, 0, 0, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 0, 0, 0, 0,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        0, 0, 0, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 0, 0, 0, 1, 1,
+    ],
+    [Texture.logSide]: [
+        0, 0, 1, 0, 0, 0, 1, 0,
+        0, 1, 0, 0, 0, 1, 0, 0,
+        0, 1, 0, 0, 0, 1, 0, 0,
+        0, 1, 0, 0, 0, 1, 0, 0,
+        0, 1, 0, 0, 0, 1, 0, 0,
+        0, 0, 1, 0, 0, 1, 0, 0,
+        0, 0, 1, 0, 0, 0, 1, 0,
+        0, 0, 1, 0, 0, 0, 1, 0,
+    ],
+    [Texture.logTop]: [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 0, 0, 0, 0, 1, 0,
+        0, 1, 0, 1, 1, 0, 1, 0,
+        0, 1, 0, 1, 1, 0, 1, 0,
+        0, 1, 0, 0, 0, 0, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    [Texture.leaves]: [
+        1, 1, 1, 1, 0, 0, 1, 1,
+        0, 1, 1, 1, 0, 1, 1, 1,
+        1, 0, 1, 0, 0, 1, 1, 1,
+        1, 1, 0, 0, 0, 0, 1, 0,
+        0, 0, 0, 1, 1, 1, 0, 0,
+        1, 1, 0, 0, 1, 1, 1, 0,
+        0, 1, 1, 0, 1, 1, 1, 1,
+        1, 1, 1, 1, 0, 1, 1, 1,
+    ]
+}
+
+export class Vertex {
     constructor(x:number = 0, y:number = 0, z:number = 0, u:number = 0, v:number = 0) {
         this.x = x;
         this.y = y;

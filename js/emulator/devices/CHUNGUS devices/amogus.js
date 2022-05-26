@@ -14,9 +14,7 @@ export class Amogus {
         };
         this.currentVertex = new Vertex();
         this.quad = [new Vertex(), new Vertex(), new Vertex(), new Vertex()];
-        this.texture = {
-            id: 0
-        };
+        this.texture = 0;
         this.settings = {
             cullBackface: true,
             transparent: false,
@@ -51,7 +49,7 @@ export class Amogus {
                 this.currentVertex.v = i & 0xF;
             },
             [IO_Port.AMOGUS_TEX]: (i) => {
-                this.texture.id = i;
+                this.texture = i;
             },
             [IO_Port.AMOGUS_SETTINGS]: (i) => {
                 this.settings.cullBackface = (i & 0x08) != 0;
@@ -89,28 +87,6 @@ export class Amogus {
             }
         };
         this.operations = 0;
-        this.texROM = {
-            0: [
-                false, false, false, false, false, false, false, false,
-                false, false, false, false, false, false, false, false,
-                false, false, false, false, false, false, false, false,
-                false, false, false, false, false, false, false, false,
-                false, false, false, false, false, false, false, false,
-                false, false, false, false, false, false, false, false,
-                false, false, false, false, false, false, false, false,
-                false, false, false, false, false, false, false, false
-            ],
-            1: [
-                true, false, true, false, true, false, true, false,
-                false, true, false, true, false, true, false, true,
-                true, false, true, false, true, false, true, false,
-                false, true, false, true, false, true, false, true,
-                true, false, true, false, true, false, true, false,
-                false, true, false, true, false, true, false, true,
-                true, false, true, false, true, false, true, false,
-                false, true, false, true, false, true, false, true
-            ]
-        };
         this.display = display;
         this.resetBuffer();
     }
@@ -122,6 +98,8 @@ export class Amogus {
                 this.display.color_out(this.zbuffer[y][x][1]);
             }
         }
+        this.display.update_display();
+        this.display.clear();
     }
     resetBuffer() {
         this.zbuffer = [];
@@ -133,8 +111,8 @@ export class Amogus {
         }
     }
     drawQuad(quad) {
-        if (this.texROM[texture.id] === undefined) {
-            console.log("texture ID [ " + texture.id + " ] does not exist"); //warn if texture doesn't exist
+        if (Textures[this.texture] === undefined) {
+            console.log("texture ID [ " + this.texture + " ] does not exist"); //warn if texture doesn't exist
         }
         if (quad[0].z < CLIP && quad[1].z < CLIP && quad[2].z < CLIP && quad[3].z < CLIP) {
             return;
@@ -150,7 +128,7 @@ export class Amogus {
                 t = 0;
             }
             else {
-                invDenom = this.FixedPointNumber(1 / Math.abs(fromV.z - toV.z), 16, 8);
+                invDenom = this.FixedPointNumber(1 / Math.abs(fromV.z - toV.z), 16, 15);
                 t = this.FixedPointNumber(Math.abs(fromV.z - at) * invDenom, 16, 15);
             }
             lerped = new Vertex;
@@ -159,8 +137,8 @@ export class Amogus {
                 e = this.FixedPointNumber(this.FixedPointNumber(Math.abs(to - fr) * t, 16, pre) * (to >= fr ? 1 : -1), 16, pre, s);
                 return this.FixedPointNumber(fr + e, 16, pre, s);
             };
-            lerped.x = _do(fromV.x, toV.x, 11);
-            lerped.y = _do(fromV.y, toV.y, 11);
+            lerped.x = _do(fromV.x, toV.x, 7);
+            lerped.y = _do(fromV.y, toV.y, 7);
             lerped.z = at;
             lerped.u = _do(fromV.u, toV.u, 15);
             lerped.v = _do(fromV.v, toV.v, 15);
@@ -322,6 +300,7 @@ export class Amogus {
         }
     }
     Draw_Scanline(y, sx, ex, sz, ez, su, eu, sv, ev, texture) {
+        var _a;
         if (ex < 0 || sx >= SCREEN_WIDTH) {
             return;
         }
@@ -333,7 +312,8 @@ export class Amogus {
         if (Math.floor(ex) == Math.floor(sx)) {
             dz = 0, du = 0, dv = 0;
             inv = 0;
-        } else {
+        }
+        else {
             if (ex - sx >= 1) {
                 inv = this.FixedPointNumber(1 / (ex - sx), 17, 16);
             }
@@ -385,21 +365,23 @@ export class Amogus {
                     let divv = do_16_bit_div(this.FixedPointNumber(v + (this.FixedPointNumber(dv, 16, 15, true) - dv) * (offset % 2), 16, 15, true), this.FixedPointNumber(z + (this.FixedPointNumber(dz, 16, 15, true) - dz) * (offset % 2), 16, 15, true));
                     let a = Math.max(0, Math.min(7, Math.floor(8 * divu)));
                     let b = Math.max(0, Math.min(7, Math.floor(8 * divv)));
-                    let sampledTexture = this.texROM[texture.id] ?? this.texROM[0];
+                    let sampledTexture = (_a = Textures[texture]) !== null && _a !== void 0 ? _a : Textures[0];
                     let color = sampledTexture[8 * (7 - b) + a];
-                    
-                    if (this.settings.transparent && !color) {
+                    if (this.settings.transparent && color == 0) {
+                        z += dz;
+                        u += du;
+                        v += dv;
                         continue;
                     }
                     if (this.settings.inverted) {
-                        color = !color;
+                        color = color ^ 1;
                     }
                     if (this.settings.overlay) {
-                        color = t[1] != 0 ? !color : color;
+                        color = color ^ t[1];
                     }
                     this.zbuffer[y][x] = [
                         Math.floor(Math.min(127, 512 * z)),
-                        color ? 1 : 0
+                        color
                     ];
                 }
             }
@@ -419,7 +401,7 @@ export class Amogus {
         vy = vertex.y;
         vz = vertex.z;
         invZ = this.FixedPointNumber(1 / vz, 17, 16);
-        persp = this.FixedPointNumber(LENS * invZ, 16, 6);
+        persp = this.FixedPointNumber(LENS * invZ, 16, 10);
         vx = this.FixedPointNumber(Math.abs(vx) * persp, 16, 0) * (vx >= 0 ? 1 : -1);
         vy = this.FixedPointNumber(Math.abs(vy) * persp, 16, 0) * (vy >= 0 ? 1 : -1);
         nvx = this.FixedPointNumber(vx + Math.floor(SCREEN_WIDTH / 2), 16, 0, true);
@@ -460,8 +442,8 @@ export class Amogus {
         ovx = vertex.x - this.cam.x;
         ovy = vertex.y - this.cam.y;
         ovz = vertex.z - this.cam.z;
-        vx = this.FixedPointNumber(this.cam.matrix[0][0] * ovx + this.cam.matrix[0][1] * ovy + this.cam.matrix[0][2] * ovz, 16, 11, true);
-        vy = this.FixedPointNumber(this.cam.matrix[1][0] * ovx + this.cam.matrix[1][1] * ovy + this.cam.matrix[1][2] * ovz, 16, 11, true);
+        vx = this.FixedPointNumber(this.cam.matrix[0][0] * ovx + this.cam.matrix[0][1] * ovy + this.cam.matrix[0][2] * ovz, 16, 7, true);
+        vy = this.FixedPointNumber(this.cam.matrix[1][0] * ovx + this.cam.matrix[1][1] * ovy + this.cam.matrix[1][2] * ovz, 16, 7, true);
         vz = this.FixedPointNumber(this.cam.matrix[2][0] * ovx + this.cam.matrix[2][1] * ovy + this.cam.matrix[2][2] * ovz, 16, 7, true);
         return new Vertex(vx, vy, vz, vertex.u, vertex.v);
     }
@@ -470,12 +452,150 @@ export class Amogus {
         let bitmask = (1 << bits) - 1;
         let shiftamount = 1 << precision;
         value = Math.floor(value * shiftamount) & bitmask;
-        if (signed && value > 1 << bits - 1) {
+        if (signed && value > 1 << (bits - 1)) {
             return (value - (1 << bits)) / shiftamount;
         }
         return value / shiftamount;
     }
 }
+export var Texture;
+(function (Texture) {
+    Texture[Texture["empty"] = 0] = "empty";
+    Texture[Texture["checker"] = 1] = "checker";
+    Texture[Texture["grassSide"] = 2] = "grassSide";
+    Texture[Texture["dirt"] = 3] = "dirt";
+    Texture[Texture["stone"] = 4] = "stone";
+    Texture[Texture["cobble"] = 5] = "cobble";
+    Texture[Texture["logSide"] = 6] = "logSide";
+    Texture[Texture["logTop"] = 7] = "logTop";
+    Texture[Texture["leaves"] = 8] = "leaves";
+    Texture[Texture["plank"] = 9] = "plank";
+    Texture[Texture["coalOre"] = 10] = "coalOre";
+    Texture[Texture["ironOre"] = 11] = "ironOre";
+    Texture[Texture["glass"] = 12] = "glass";
+    Texture[Texture["saplingLight"] = 13] = "saplingLight";
+    Texture[Texture["saplingDark"] = 14] = "saplingDark";
+    Texture[Texture["tableSide"] = 15] = "tableSide";
+    Texture[Texture["tableTop"] = 16] = "tableTop";
+    Texture[Texture["furnaceSide"] = 17] = "furnaceSide";
+    Texture[Texture["furnaceTop"] = 18] = "furnaceTop";
+    Texture[Texture["furnaceFrontOff"] = 19] = "furnaceFrontOff";
+    Texture[Texture["furnaceFrontOn"] = 20] = "furnaceFrontOn";
+    Texture[Texture["chestSide"] = 21] = "chestSide";
+    Texture[Texture["chestTop"] = 22] = "chestTop";
+    Texture[Texture["chestFront"] = 23] = "chestFront";
+    Texture[Texture["coalItemLight"] = 23] = "coalItemLight";
+    Texture[Texture["coalItemDark"] = 24] = "coalItemDark";
+    Texture[Texture["shadow"] = 25] = "shadow";
+    Texture[Texture["break0"] = 26] = "break0";
+    Texture[Texture["break1"] = 27] = "break1";
+    Texture[Texture["break2"] = 28] = "break2";
+    Texture[Texture["break3"] = 29] = "break3";
+    Texture[Texture["break4"] = 30] = "break4";
+    Texture[Texture["break5"] = 31] = "break5";
+})(Texture || (Texture = {}));
+const Textures = {
+    [Texture.empty]: [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    [Texture.checker]: [
+        1, 0, 1, 0, 1, 0, 1, 0,
+        0, 1, 0, 1, 0, 1, 0, 1,
+        1, 0, 1, 0, 1, 0, 1, 0,
+        0, 1, 0, 1, 0, 1, 0, 1,
+        1, 0, 1, 0, 1, 0, 1, 0,
+        0, 1, 0, 1, 0, 1, 0, 1,
+        1, 0, 1, 0, 1, 0, 1, 0,
+        0, 1, 0, 1, 0, 1, 0, 1,
+    ],
+    [Texture.saplingDark]: [
+        0, 0, 0, 1, 1, 0, 0, 0,
+        0, 0, 0, 1, 0, 0, 0, 0,
+        0, 0, 1, 1, 1, 1, 0, 0,
+        0, 1, 1, 0, 0, 1, 1, 0,
+        0, 0, 0, 1, 1, 0, 0, 0,
+        0, 0, 1, 0, 1, 1, 0, 0,
+        0, 0, 0, 0, 0, 1, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    [Texture.saplingLight]: [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 1, 0, 0, 0,
+        1, 1, 0, 0, 0, 0, 1, 1,
+        0, 0, 0, 1, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 1,
+        0, 1, 0, 0, 0, 0, 1, 0,
+        0, 0, 1, 1, 0, 0, 1, 0,
+        0, 1, 0, 0, 0, 1, 0, 0,
+    ],
+    [Texture.grassSide]: [
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 0, 1, 1, 1, 1, 1, 0,
+        0, 0, 0, 0, 1, 0, 0, 0,
+        0, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    [Texture.dirt]: [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    [Texture.stone]: [
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 0, 0, 0, 0, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 0, 0, 0, 0,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        0, 0, 0, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 0, 0, 0, 1, 1,
+    ],
+    [Texture.logSide]: [
+        0, 0, 1, 0, 0, 0, 1, 0,
+        0, 1, 0, 0, 0, 1, 0, 0,
+        0, 1, 0, 0, 0, 1, 0, 0,
+        0, 1, 0, 0, 0, 1, 0, 0,
+        0, 1, 0, 0, 0, 1, 0, 0,
+        0, 0, 1, 0, 0, 1, 0, 0,
+        0, 0, 1, 0, 0, 0, 1, 0,
+        0, 0, 1, 0, 0, 0, 1, 0,
+    ],
+    [Texture.logTop]: [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 0, 0, 0, 0, 1, 0,
+        0, 1, 0, 1, 1, 0, 1, 0,
+        0, 1, 0, 1, 1, 0, 1, 0,
+        0, 1, 0, 0, 0, 0, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ],
+    [Texture.leaves]: [
+        1, 1, 1, 1, 0, 0, 1, 1,
+        0, 1, 1, 1, 0, 1, 1, 1,
+        1, 0, 1, 0, 0, 1, 1, 1,
+        1, 1, 0, 0, 0, 0, 1, 0,
+        0, 0, 0, 1, 1, 1, 0, 0,
+        1, 1, 0, 0, 1, 1, 1, 0,
+        0, 1, 1, 0, 1, 1, 1, 1,
+        1, 1, 1, 1, 0, 1, 1, 1,
+    ]
+};
 export class Vertex {
     constructor(x = 0, y = 0, z = 0, u = 0, v = 0) {
         this.x = 0;

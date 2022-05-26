@@ -2,6 +2,8 @@
 import http.server
 import socketserver
 
+print("starting server...")
+
 PORT = 1337
 
 Handler = http.server.SimpleHTTPRequestHandler
@@ -10,4 +12,5 @@ Handler.extensions_map.update({
 });
 
 httpd = socketserver.TCPServer(("", PORT), Handler)
+print("server started")
 httpd.serve_forever()

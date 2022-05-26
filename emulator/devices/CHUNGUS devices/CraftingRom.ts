@@ -2,55 +2,55 @@ import { Device } from "../device.js";
 import { IO_Port } from "../../instructions.js";
 
 export class CraftingRom implements Device {
-    recipes: any = {};
+    recipes: any = {
+         //smelting recipes
+         [Ingredients.cobble]: Results.stone,
+         [Ingredients.log]: Results.coal,
+         [Ingredients.ironOre]: Results.ironIngot,
+ 
+         //crafting recipes
+         ["770770000"]: Results.table, //TODO: add other locations
+         ["500000000"]: Results.plank, //TODO: add other locations
+         ["444404444"]: Results.furnace,
+         ["700700000"]: Results.stick, //TODO: add other locations
+ 
+         ["7770E00E0"]: Results.woodPick,
+         ["3330E00E0"]: Results.stonePick,
+         ["DDD0E00E0"]: Results.ironPick,
+ 
+         ["7707E00E0"]: Results.woodAxe,
+         ["07707E00E"]: Results.woodAxe,
+         ["3303E00E0"]: Results.stoneAxe,
+         ["03303E00E"]: Results.stoneAxe,
+         ["DD0DE00E0"]: Results.ironAxe,
+         ["0DD0DE00E"]: Results.ironAxe,
+ 
+         ["0700E00E0"]: Results.woodShovel,
+         ["700E00E00"]: Results.woodShovel,
+         ["00700E00E"]: Results.woodShovel,
+         ["0300E00E0"]: Results.stoneShovel,
+         ["300E00E00"]: Results.stoneShovel,
+         ["00300E00E"]: Results.stoneShovel,
+         ["0D00E00E0"]: Results.ironShovel,
+         ["00D00E00E"]: Results.ironShovel,
+         ["D00E00E00"]: Results.ironShovel,
+ 
+         ["0700700E0"]: Results.woodSword,
+         ["00700700E"]: Results.woodSword,
+         ["700700E00"]: Results.woodSword,
+         ["0300300E0"]: Results.stoneSword,
+         ["00300300E"]: Results.stoneSword,
+         ["300300E00"]: Results.stoneSword,
+         ["0D00D00E0"]: Results.ironSword,
+         ["00D00D00E"]: Results.ironSword,
+         ["D00D00E00"]: Results.ironSword,
+ 
+         ["0D0D00000"]: Results.shears, //TODO: add other locations
+
+    };
     mode:number = 0;
     currentRecipe:string = "000000000"; //use string because 9 hex values just barely don't fit into 32 bits
-    constructor () {
-        //smelting recipes
-        this.recipes[Ingredients.cobble] = Results.stone;
-        this.recipes[Ingredients.log] = Results.coal;
-        this.recipes[Ingredients.ironOre] = Results.ironIngot;
-
-        //crafting recipes
-        this.recipes["770770000"] = Results.table; //TODO add other locations
-        this.recipes["500000000"] = Results.plank; //TODO add other locations
-        this.recipes["444404444"] = Results.furnace;
-        this.recipes["700700000"] = Results.stick; //TODO add other locations
-
-        this.recipes["7770E00E0"] = Results.woodPick;
-        this.recipes["3330E00E0"] = Results.stonePick;
-        this.recipes["DDD0E00E0"] = Results.ironPick;
-
-        this.recipes["7707E00E0"] = Results.woodAxe;
-        this.recipes["07707E00E"] = Results.woodAxe;
-        this.recipes["3303E00E0"] = Results.stoneAxe;
-        this.recipes["03303E00E"] = Results.stoneAxe;
-        this.recipes["DD0DE00E0"] = Results.ironAxe;
-        this.recipes["0DD0DE00E"] = Results.ironAxe;
-
-        this.recipes["0700E00E0"] = Results.woodShovel;
-        this.recipes["700E00E00"] = Results.woodShovel;
-        this.recipes["00700E00E"] = Results.woodShovel;
-        this.recipes["0300E00E0"] = Results.stoneShovel;
-        this.recipes["300E00E00"] = Results.stoneShovel;
-        this.recipes["00300E00E"] = Results.stoneShovel;
-        this.recipes["0D00E00E0"] = Results.ironShovel;
-        this.recipes["00D00E00E"] = Results.ironShovel;
-        this.recipes["D00E00E00"] = Results.ironShovel;
-
-        this.recipes["0700700E0"] = Results.woodSword;
-        this.recipes["00700700E"] = Results.woodSword;
-        this.recipes["700700E00"] = Results.woodSword;
-        this.recipes["0300300E0"] = Results.stoneSword;
-        this.recipes["00300300E"] = Results.stoneSword;
-        this.recipes["300300E00"] = Results.stoneSword;
-        this.recipes["0D00D00E0"] = Results.ironSword;
-        this.recipes["00D00D00E"] = Results.ironSword;
-        this.recipes["D00D00E00"] = Results.ironSword;
-
-        this.recipes["0D0D00000"] = Results.shears; //TODO add other locations
-    };
-    inputs = {
+       inputs = {
         [IO_Port.CRAFTROM]: () => {
             if (this.mode == Mode.crafting) {
                 return this.recipes[this.currentRecipe.toUpperCase()] ?? 0
@@ -76,6 +76,8 @@ export class CraftingRom implements Device {
 }
 
 enum Mode { crafting, smelting };
+
+//TODO: review IDs and ensure up-to-date
 
 enum Ingredients {
     air, //0x0

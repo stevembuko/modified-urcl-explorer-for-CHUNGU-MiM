@@ -1,86 +1,87 @@
 import { IO_Port } from "../../instructions.js";
+import { Block } from "./blockToMesh.js";
 export class BlockRAM {
     constructor() {
         this.blockGrid = [
             [
-                [3, 3, 3, 3, 3, 3, 3, 1,],
-                [3, 3, 3, 3, 3, 3, 1, 1,],
-                [3, 3, 3, 3, 3, 3, 1, 1,],
-                [3, 3, 3, 3, 3, 3, 1, 1,],
-                [3, 3, 3, 3, 3, 1, 1, 1,],
-                [3, 3, 3, 3, 3, 1, 1, 1,],
-                [3, 3, 3, 3, 1, 1, 1, 1,],
-                [3, 3, 3, 1, 1, 1, 1, 1,],
+                [Block.stone, Block.stone, Block.stone, Block.stone, Block.stone, Block.stone, Block.stone, Block.grass,],
+                [Block.stone, Block.stone, Block.stone, Block.stone, Block.stone, Block.stone, Block.grass, Block.grass,],
+                [Block.stone, Block.stone, Block.stone, Block.stone, Block.stone, Block.stone, Block.grass, Block.grass,],
+                [Block.stone, Block.stone, Block.stone, Block.stone, Block.stone, Block.stone, Block.grass, Block.grass,],
+                [Block.stone, Block.stone, Block.stone, Block.stone, Block.stone, Block.grass, Block.grass, Block.grass,],
+                [Block.stone, Block.stone, Block.stone, Block.stone, Block.stone, Block.grass, Block.grass, Block.grass,],
+                [Block.stone, Block.stone, Block.stone, Block.stone, Block.grass, Block.grass, Block.grass, Block.grass,],
+                [Block.stone, Block.stone, Block.stone, Block.grass, Block.grass, Block.grass, Block.grass, Block.grass,],
             ],
             [
-                [3, 3, 3, 3, 1, 1, 1, 0,],
-                [3, 3, 3, 1, 1, 1, 0, 0,],
-                [3, 3, 1, 1, 1, 1, 0, 0,],
-                [3, 3, 1, 1, 1, 1, 0, 0,],
-                [3, 1, 1, 1, 1, 0, 0, 0,],
-                [1, 1, 1, 1, 1, 0, 0, 0,],
-                [1, 1, 1, 1, 0, 0, 0, 0,],
-                [1, 1, 1, 0, 0, 0, 0, 0,],
+                [Block.stone, Block.stone, Block.stone, Block.stone, Block.grass, Block.grass, Block.grass, Block.air,],
+                [Block.stone, Block.stone, Block.stone, Block.grass, Block.grass, Block.grass, Block.air, Block.air,],
+                [Block.stone, Block.stone, Block.grass, Block.grass, Block.grass, Block.grass, Block.air, Block.air,],
+                [Block.stone, Block.stone, Block.grass, Block.grass, Block.grass, Block.grass, Block.air, Block.air,],
+                [Block.stone, Block.grass, Block.grass, Block.grass, Block.grass, Block.air, Block.air, Block.air,],
+                [Block.grass, Block.grass, Block.grass, Block.grass, Block.grass, Block.air, Block.air, Block.air,],
+                [Block.grass, Block.grass, Block.grass, Block.grass, Block.air, Block.air, Block.air, Block.air,],
+                [Block.grass, Block.grass, Block.grass, Block.air, Block.air, Block.air, Block.air, Block.air,],
             ],
             [
-                [1, 1, 1, 1, 0, 0, 0, 0,],
-                [1, 1, 1, 0, 0, 0, 0, 0,],
-                [1, 1, 0, 0, 5, 0, 0, 0,],
-                [1, 1, 0, 0, 0, 0, 0, 0,],
-                [1, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
+                [Block.grass, Block.grass, Block.grass, Block.grass, Block.air, Block.air, Block.air, Block.air,],
+                [Block.grass, Block.grass, Block.grass, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.grass, Block.grass, Block.air, Block.air, Block.log, Block.air, Block.air, Block.air,],
+                [Block.grass, Block.grass, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.grass, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
             ],
             [
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 5, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.log, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
             ],
             [
-                [0, 0, 0, 6, 6, 6, 0, 0,],
-                [0, 0, 6, 6, 6, 6, 6, 0,],
-                [0, 0, 6, 6, 5, 6, 6, 0,],
-                [0, 0, 6, 6, 6, 6, 6, 0,],
-                [0, 0, 0, 6, 6, 6, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
+                [Block.air, Block.air, Block.air, Block.leaves, Block.leaves, Block.leaves, Block.air, Block.air,],
+                [Block.air, Block.air, Block.leaves, Block.leaves, Block.leaves, Block.leaves, Block.leaves, Block.air,],
+                [Block.air, Block.air, Block.leaves, Block.leaves, Block.log, Block.leaves, Block.leaves, Block.air,],
+                [Block.air, Block.air, Block.leaves, Block.leaves, Block.leaves, Block.leaves, Block.leaves, Block.air,],
+                [Block.air, Block.air, Block.air, Block.leaves, Block.leaves, Block.leaves, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
             ],
             [
-                [0, 0, 0, 6, 6, 6, 0, 0,],
-                [0, 0, 6, 6, 6, 6, 6, 0,],
-                [0, 0, 6, 6, 5, 6, 6, 0,],
-                [0, 0, 6, 6, 6, 6, 6, 0,],
-                [0, 0, 0, 6, 6, 6, 6, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
+                [Block.air, Block.air, Block.air, Block.leaves, Block.leaves, Block.leaves, Block.air, Block.air,],
+                [Block.air, Block.air, Block.leaves, Block.leaves, Block.leaves, Block.leaves, Block.leaves, Block.air,],
+                [Block.air, Block.air, Block.leaves, Block.leaves, Block.log, Block.leaves, Block.leaves, Block.air,],
+                [Block.air, Block.air, Block.leaves, Block.leaves, Block.leaves, Block.leaves, Block.leaves, Block.air,],
+                [Block.air, Block.air, Block.air, Block.leaves, Block.leaves, Block.leaves, Block.leaves, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
             ],
             [
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 6, 6, 0, 0, 0,],
-                [0, 0, 0, 6, 6, 6, 0, 0,],
-                [0, 0, 0, 6, 6, 6, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.leaves, Block.leaves, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.leaves, Block.leaves, Block.leaves, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.leaves, Block.leaves, Block.leaves, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
             ],
             [
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 6, 0, 0, 0,],
-                [0, 0, 0, 6, 6, 6, 0, 0,],
-                [0, 0, 0, 0, 6, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
-                [0, 0, 0, 0, 0, 0, 0, 0,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.leaves, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.leaves, Block.leaves, Block.leaves, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.leaves, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
+                [Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air, Block.air,],
             ]
         ];
         this.x = 0;
@@ -89,16 +90,10 @@ export class BlockRAM {
         this.id = 0;
         this.inputs = {
             [IO_Port.BLOCKRAM_ID]: () => {
-                var _a;
-                return (_a = this.blockGrid[this.x][this.y][this.z]) !== null && _a !== void 0 ? _a : 0;
+                return this.getBlock(this.x, this.y, this.z);
             },
             [IO_Port.BLOCKRAM_ZI]: () => {
-                var _a;
-                return (this.z << 4) | ((_a = this.blockGrid[this.x][this.y][this.z]) !== null && _a !== void 0 ? _a : 0);
-            },
-            [IO_Port.BLOCKRAM_SETID]: () => {
-                this.blockGrid[this.x][this.y][this.z] = this.id;
-                return 0;
+                return (this.z << 4) | this.getBlock(this.x, this.y, this.z);
             }
         };
         this.outputs = {
@@ -113,9 +108,22 @@ export class BlockRAM {
         };
     }
     getBlock(x, y, z) {
-        return this.blockGrid[x][y][z];
+        if (0 <= x && x < 8) {
+            if (0 <= y && y < 8) {
+                if (0 <= z && z < 8) {
+                    return this.blockGrid[y][7 - z][x];
+                }
+            }
+        }
+        return 0;
     }
     setBlock(x, y, z, id) {
-        this.blockGrid[x][y][z] = id;
+        if (0 <= x && x < 8) {
+            if (0 <= y && y < 8) {
+                if (0 <= z && z < 8) {
+                    this.blockGrid[y][7 - z][x] = id;
+                }
+            }
+        }
     }
 }
