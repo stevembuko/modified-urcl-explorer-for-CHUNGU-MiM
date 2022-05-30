@@ -13,7 +13,9 @@ export class Amogus implements Device {
         x: 0,
         y: 0,
         z: 0,
-        matrix: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+        matrix: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+        yawIndex: 0,
+        pitchIndex: 0
     }
     display:Gl_Display;
     currentVertex:Vertex = new Vertex();
@@ -67,6 +69,12 @@ export class Amogus implements Device {
         }
     }
     inputs = {
+        [IO_Port.AMOGUS_PLRDIRX]: () => {
+            return Math.floor(-Math.sin(Math.PI * 2 * this.cam.yawIndex / 16) * 64);
+        },
+        [IO_Port.AMOGUS_PLRDIRZ]: () => {
+            return Math.floor(Math.cos(Math.PI * 2 * this.cam.yawIndex / 16) * 64);
+        },
         [IO_Port.AMOGUS_CAMDIRX]: () => {
             return Math.floor(this.cam.matrix[2][0] * 64);
         },
@@ -495,8 +503,10 @@ export class Amogus implements Device {
     }
 
     CamRotToMatrix(pitchIndex:number, yawIndex:number):number[][] {
-        let c = Math.PI * 2 * (pitchIndex / 16);
-        let b = Math.PI * 2 * (yawIndex / 16);
+        this.cam.pitchIndex = pitchIndex;
+        this.cam.yawIndex = yawIndex;
+        let c = Math.PI * 2 * (yawIndex / 16);
+        let b = Math.PI * 2 * (pitchIndex / 16);
 
         let sin = (ang:number) => {
             return this.FixedPointNumber(Math.abs(Math.sin(ang)), 16, 14) * (Math.sin(ang) > 0 ? 1 : -1);
